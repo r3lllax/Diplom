@@ -1,0 +1,180 @@
+package handler
+
+import (
+	"GIN/JWT"
+	errs "GIN/errors"
+	"GIN/internal/env"
+	"GIN/keys"
+	"GIN/tdo/request"
+	"net/http"
+	"strings"
+
+	service "GIN/service/services"
+	"errors"
+
+	"time"
+
+	"github.com/gin-gonic/gin"
+)
+
+type AuthHandlers struct {
+	service *service.AuthService
+}
+
+func NewAuthHandler(authService *service.AuthService) *AuthHandlers {
+	return &AuthHandlers{
+		service: authService,
+	}
+}
+func (h *AuthHandlers) Registration(ctx *gin.Context) {
+	var request request.Registration
+	if err := ctx.ShouldBind(&request); err != nil {
+		errs.ThrowError(ctx, http.StatusBadRequest, "Неверное тело запроса")
+		return
+	}
+	validationErrors := h.service.Validate.ValidateWithErrorsByte(request)
+	if len(validationErrors) > 0 {
+		errs.ThrowValidationErrors(ctx, validationErrors)
+		return
+	}
+
+	var ErrWithCode errs.ErrorWithCode
+	err := h.service.Registrate(ctx, request)
+	if err != nil {
+		if errors.As(err, &ErrWithCode) {
+			errs.ThrowError(ctx, ErrWithCode.Code, ErrWithCode.Message)
+			return
+		}
+	}
+	ctx.JSON(http.StatusCreated, gin.H{
+		"message": "Вы успешно зарегистрировались!",
+	})
+
+}
+func (h *AuthHandlers) Login(ctx *gin.Context) {
+	var request request.Login
+	if err := ctx.ShouldBindJSON(&request); err != nil {
+		errs.ThrowError(ctx, http.StatusBadRequest, "Неверное тело запроса")
+		return
+	}
+	validationErrors := h.service.Validate.ValidateWithErrorsByte(request)
+	if len(validationErrors) > 0 {
+		errs.ThrowValidationErrors(ctx, validationErrors)
+		return
+	}
+
+	access, refresh, err := h.service.Login(ctx.Request.Context(), request)
+	var ErrWithCode errs.ErrorWithCode
+	if err != nil {
+		if errors.As(err, &ErrWithCode) {
+			errs.ThrowError(ctx, ErrWithCode.Code, ErrWithCode.Message)
+			return
+		}
+	}
+	_, refreshLifeTimeHours := env.GetTokensLifeTime()
+
+	ctx.SetCookie(
+		"refresh_token",
+		refresh,
+		int(time.Duration(refreshLifeTimeHours)*time.Hour),
+		"/",
+		"localhost",
+		false,
+		true,
+	)
+
+	ctx.JSON(200, gin.H{
+		"accessToken": access,
+	})
+
+}
+func (h *AuthHandlers) Logout(ctx *gin.Context) {
+	accessToken := strings.Split(ctx.Request.Header.Get("Authorization"), " ")[1]
+	refreshToken := ""
+
+	refreshCookie, _ := ctx.Request.Cookie("refresh_token")
+	if refreshCookie != nil {
+		refreshToken = refreshCookie.Value
+	}
+	h.service.Logout(ctx.Request.Context(), refreshToken, accessToken)
+	ctx.SetCookie(
+		"refresh_token",
+		"",
+		-1,
+		"/",
+		"localhost",
+		false,
+		true,
+	)
+
+	ctx.JSON(http.StatusNoContent, gin.H{})
+}
+
+func (h *AuthHandlers) LogoutAll(ctx *gin.Context) {
+	accessToken := strings.Split(ctx.Request.Header.Get("Authorization"), " ")[1]
+	refreshToken := ""
+
+	refreshCookie, _ := ctx.Request.Cookie("refresh_token")
+	if refreshCookie != nil {
+		refreshToken = refreshCookie.Value
+	}
+
+	userID := ctx.Keys[keys.UserIDKey].(int)
+	h.service.LogoutAll(ctx.Request.Context(), userID, refreshToken, accessToken)
+	ctx.SetCookie(
+		"refresh_token",
+		"",
+		-1,
+		"/",
+		"localhost",
+		false,
+		true,
+	)
+
+	ctx.JSON(http.StatusNoContent, gin.H{})
+}
+
+func (h *AuthHandlers) Refresh(ctx *gin.Context) {
+	refreshCookie, err := ctx.Request.Cookie("refresh_token")
+	if err != nil {
+		errs.ThrowUnauthorizedError(ctx)
+		return
+	}
+	refreshToken, err := JWT.ParseToken(refreshCookie.Value)
+	if err != nil {
+		errs.ThrowUnauthorizedError(ctx)
+		return
+	}
+	info, err := JWT.ConvertToken(refreshToken)
+	if err != nil {
+		errs.ThrowUnauthorizedError(ctx)
+		return
+	}
+
+	userID := int(info[string(keys.UserIDKey)].(float64))
+
+	newAccessToken, newRefreshToken, err := h.service.Refresh(ctx, refreshCookie.Value, userID)
+	var ErrWithCode errs.ErrorWithCode
+	if err != nil {
+		if errors.As(err, &ErrWithCode) {
+			errs.ThrowError(ctx, ErrWithCode.Code, ErrWithCode.Message)
+			return
+		}
+	}
+	_, refreshLifeTimeHours := env.GetTokensLifeTime()
+
+	ctx.SetCookie(
+		"refresh_token",
+		newRefreshToken,
+		int(time.Duration(refreshLifeTimeHours)*time.Hour),
+		"/",
+		"localhost",
+		false,
+		true,
+	)
+
+	ctx.JSON(200, gin.H{
+		"accessToken": newAccessToken,
+	})
+
+}

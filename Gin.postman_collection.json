@@ -1,0 +1,1064 @@
+{
+	"info": {
+		"_postman_id": "adea3f58-a2b9-4f57-910d-06b15cbb51b9",
+		"name": "Gin",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "46073741",
+		"_collection_link": "https://san343k.postman.co/workspace/San343k's-Workspace~baf5d411-1cad-4437-8ded-3e6288bca607/collection/46073741-adea3f58-a2b9-4f57-910d-06b15cbb51b9?action=share&source=collection_link&creator=46073741"
+	},
+	"item": [
+		{
+			"name": "Auth",
+			"item": [
+				{
+					"name": "Registration",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "name",
+									"value": "r3lllax",
+									"type": "text"
+								},
+								{
+									"key": "email",
+									"value": "turkevicaleksandr2@gmail.com",
+									"type": "text"
+								},
+								{
+									"key": "password",
+									"value": "Password",
+									"type": "text"
+								},
+								{
+									"key": "passwordConfirm",
+									"value": "Password",
+									"type": "text"
+								},
+								{
+									"key": "photo_file",
+									"type": "file",
+									"src": [],
+									"disabled": true
+								}
+							]
+						},
+						"url": {
+							"raw": "{{host}}/registration",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"registration"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.environment.set(\"token\",pm.response.json().accessToken)",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\":\"turkevicaleksandr2@gmail.com\",\n    \"password\":\"Password\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{host}}/login",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"login"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Logout",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{host}}/logout",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"logout"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Logout Everywhere",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{host}}/logout-all",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"logout-all"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Refresh",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.environment.set(\"token\",pm.response.json().accessToken)",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{host}}/refresh",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"refresh"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "User",
+			"item": [
+				{
+					"name": "Statistics",
+					"item": [
+						{
+							"name": "My tracks",
+							"item": [
+								{
+									"name": "Get my tracks statistic",
+									"request": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "{{host}}/users/my-tracks/listen-statistics?start=0&count=15",
+											"host": [
+												"{{host}}"
+											],
+											"path": [
+												"users",
+												"my-tracks",
+												"listen-statistics"
+											],
+											"query": [
+												{
+													"key": "start",
+													"value": "0"
+												},
+												{
+													"key": "count",
+													"value": "15"
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Get my track likes count",
+									"request": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "{{host}}/users/my-tracks/likes-count",
+											"host": [
+												"{{host}}"
+											],
+											"path": [
+												"users",
+												"my-tracks",
+												"likes-count"
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						},
+						{
+							"name": "Get listen statistics",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{host}}/users/listen-statistics?start=0&count=15",
+									"host": [
+										"{{host}}"
+									],
+									"path": [
+										"users",
+										"listen-statistics"
+									],
+									"query": [
+										{
+											"key": "start",
+											"value": "0"
+										},
+										{
+											"key": "count",
+											"value": "15"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get all listen time",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{host}}/users/listen-time",
+									"host": [
+										"{{host}}"
+									],
+									"path": [
+										"users",
+										"listen-time"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get my likes count",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{host}}/users/likes-count",
+									"host": [
+										"{{host}}"
+									],
+									"path": [
+										"users",
+										"likes-count"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Get",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{host}}/users/4",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"users",
+								"4"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Edit",
+					"request": {
+						"method": "PATCH",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "name",
+									"value": "r3lllax",
+									"type": "text",
+									"disabled": true
+								},
+								{
+									"key": "photo",
+									"type": "file",
+									"src": "/home/r3lllax/Загрузки/181561-outcrop-outcrop_dispensary_red_rocks-open_front_crop_top-geology-t_shirt-7680x4320.jpg"
+								},
+								{
+									"key": "email",
+									"value": "newEmail@email.em",
+									"type": "text",
+									"disabled": true
+								},
+								{
+									"key": "deletePhoto",
+									"value": "true",
+									"type": "text",
+									"disabled": true
+								}
+							]
+						},
+						"url": {
+							"raw": "{{host}}/users/2",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"users",
+								"2"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Edit privte status",
+					"request": {
+						"method": "PATCH",
+						"header": [],
+						"url": {
+							"raw": "{{host}}/users/set-private?status=false",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"users",
+								"set-private"
+							],
+							"query": [
+								{
+									"key": "status",
+									"value": "false"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{host}}/users",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"users"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get user playlists (pagination)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{host}}/users/1/playlists",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"users",
+								"1",
+								"playlists"
+							],
+							"query": [
+								{
+									"key": "start",
+									"value": "3",
+									"disabled": true
+								},
+								{
+									"key": "count",
+									"value": "1",
+									"disabled": true
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get liked songs (pagination)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{host}}/users/3/likes?start=0&count=15",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"users",
+								"3",
+								"likes"
+							],
+							"query": [
+								{
+									"key": "start",
+									"value": "0"
+								},
+								{
+									"key": "count",
+									"value": "15"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get user created playlists (pagination) Copy",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{host}}/user/3/playlists?start=0&count=15",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"user",
+								"3",
+								"playlists"
+							],
+							"query": [
+								{
+									"key": "start",
+									"value": "0"
+								},
+								{
+									"key": "count",
+									"value": "15"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get user songs(he is author) (pagination)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{host}}/users/my-songs?start=0&count=15",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"users",
+								"my-songs"
+							],
+							"query": [
+								{
+									"key": "start",
+									"value": "0"
+								},
+								{
+									"key": "count",
+									"value": "15"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Song",
+			"item": [
+				{
+					"name": "likes",
+					"item": [
+						{
+							"name": "Like song",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"url": {
+									"raw": "{{host}}/songs/1/like",
+									"host": [
+										"{{host}}"
+									],
+									"path": [
+										"songs",
+										"1",
+										"like"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Unlike song",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"url": {
+									"raw": "{{host}}/songs/1/unlike",
+									"host": [
+										"{{host}}"
+									],
+									"path": [
+										"songs",
+										"1",
+										"unlike"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Create",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "author",
+									"value": "Deftones",
+									"type": "text"
+								},
+								{
+									"key": "name",
+									"value": "Cherry Waves",
+									"type": "text"
+								},
+								{
+									"key": "volume",
+									"type": "file",
+									"src": "/home/r3lllax/Загрузки/94efed9a27474b1ad486bc810a48b513.jpg"
+								},
+								{
+									"key": "audio",
+									"type": "file",
+									"src": "/home/r3lllax/Загрузки/Rory in early 20s - Ai Wade Sitty.mp3"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{host}}/songs",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"songs"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{host}}/songs/1",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"songs",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Edit",
+					"request": {
+						"method": "PATCH",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "author",
+									"value": "SANEK",
+									"type": "text",
+									"disabled": true
+								},
+								{
+									"key": "name",
+									"value": "Вишневые волны",
+									"type": "text"
+								},
+								{
+									"key": "audio",
+									"type": "file",
+									"src": "/home/r3lllax/Загрузки/d9e2cfef-e9d8-4ddf-b02c-dc5e52d9ff6d-testAuidio.mp3",
+									"disabled": true
+								},
+								{
+									"key": "volume",
+									"type": "file",
+									"src": "/home/r3lllax/Загрузки/KJfEZzbZZlM.jpg",
+									"disabled": true
+								}
+							]
+						},
+						"url": {
+							"raw": "{{host}}/songs/3",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"songs",
+								"3"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{host}}/songs/2",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"songs",
+								"2"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Edit status",
+					"request": {
+						"method": "PATCH",
+						"header": [],
+						"url": {
+							"raw": "{{host}}/songs/1/set-available/false",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"songs",
+								"1",
+								"set-available",
+								"false"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Add listen",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{host}}/songs/1/add_listen",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"songs",
+								"1",
+								"add_listen"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Songs pagination",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{host}}/songs?start=0&count=15",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"songs"
+							],
+							"query": [
+								{
+									"key": "start",
+									"value": "0"
+								},
+								{
+									"key": "count",
+									"value": "15"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Playlist",
+			"item": [
+				{
+					"name": "Songs",
+					"item": [
+						{
+							"name": "Add to playlist",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"url": {
+									"raw": "{{host}}/playlists/1/songs/2",
+									"host": [
+										"{{host}}"
+									],
+									"path": [
+										"playlists",
+										"1",
+										"songs",
+										"2"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Delete from playlist",
+							"request": {
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{host}}/playlists/1/songs/2",
+									"host": [
+										"{{host}}"
+									],
+									"path": [
+										"playlists",
+										"1",
+										"songs",
+										"2"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Likes",
+					"item": [
+						{
+							"name": "Like",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"url": {
+									"raw": "{{host}}/playlists/4/like",
+									"host": [
+										"{{host}}"
+									],
+									"path": [
+										"playlists",
+										"4",
+										"like"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Unlike",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"url": {
+									"raw": "{{host}}/playlists/4/unlike",
+									"host": [
+										"{{host}}"
+									],
+									"path": [
+										"playlists",
+										"4",
+										"unlike"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Create",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "title",
+									"value": "Плейлист для сигм))",
+									"type": "text"
+								},
+								{
+									"key": "description",
+									"value": "onlysigmas",
+									"type": "text"
+								},
+								{
+									"key": "volume",
+									"type": "file",
+									"src": "/home/r3lllax/Загрузки/7a62f0ba5c029029a05706cc5bee134f.jpg"
+								},
+								{
+									"key": "is_private",
+									"value": "true",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{host}}/playlists",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"playlists"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Edit",
+					"request": {
+						"method": "PATCH",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "title",
+									"value": "Плейлист для сигм))",
+									"type": "text",
+									"disabled": true
+								},
+								{
+									"key": "description",
+									"value": " ",
+									"type": "text",
+									"disabled": true
+								},
+								{
+									"key": "volume",
+									"type": "file",
+									"src": "/home/r3lllax/Загрузки/7a62f0ba5c029029a05706cc5bee134f.jpg",
+									"disabled": true
+								},
+								{
+									"key": "is_private",
+									"value": "true",
+									"type": "text",
+									"disabled": true
+								}
+							]
+						},
+						"url": {
+							"raw": "{{host}}/playlists/7",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"playlists",
+								"7"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{host}}/playlists/7",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"playlists",
+								"7"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{host}}/playlists/1",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"playlists",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get songs (pagination)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{host}}/playlists/1/songs",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"playlists",
+								"1",
+								"songs"
+							],
+							"query": [
+								{
+									"key": "start",
+									"value": "3",
+									"disabled": true
+								},
+								{
+									"key": "count",
+									"value": "15",
+									"disabled": true
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Edit status",
+					"request": {
+						"method": "PATCH",
+						"header": [],
+						"url": {
+							"raw": "{{host}}/playlists/2/set-private?status=true",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"playlists",
+								"2",
+								"set-private"
+							],
+							"query": [
+								{
+									"key": "status",
+									"value": "true"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{token}}",
+				"type": "string"
+			}
+		]
+	},
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"requests": {},
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"requests": {},
+				"exec": [
+					""
+				]
+			}
+		}
+	]
+}

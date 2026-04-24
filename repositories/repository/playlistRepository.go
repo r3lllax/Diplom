@@ -1,0 +1,277 @@
+package repository
+
+import (
+	errs "GIN/errors"
+	"GIN/model"
+	"GIN/tdo"
+	"GIN/tdo/response"
+	"context"
+	"errors"
+	"fmt"
+	"log"
+	"net/http"
+	"strings"
+	"time"
+
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
+)
+
+type PlaylistRepository struct {
+	db *pgxpool.Pool
+}
+
+func NewPlaylistRepository(dbase *pgxpool.Pool) *PlaylistRepository {
+	return &PlaylistRepository{
+		db: dbase,
+	}
+}
+
+func (r *PlaylistRepository) CreatePlaylist(ctx context.Context, playlist *model.Playlist) (int, error) {
+	query := `insert into playlists (user_id,title,description,volume_path,is_private,is_available)
+values ($1,$2,$3,$4,$5,$6) returning id`
+	var id int
+	err := r.db.QueryRow(ctx, query, playlist.UserID, playlist.Title, playlist.Description, playlist.VolumePath, playlist.IsPrivate, playlist.IsAvailable).Scan(&id)
+	if err != nil {
+		log.Println("ERROR CREATING PLAYLIST:", err)
+		return 0, errs.ServerError()
+	}
+	return id, nil
+}
+
+func (r *PlaylistRepository) LikePlaylist(ctx context.Context, userID, playlistID int) error {
+	query := `insert into liked_playlists (user_id,playlist_id,liked_at)
+values ($1,$2,$3)`
+	_, err := r.db.Exec(ctx, query, userID, playlistID, time.Now())
+	if err != nil {
+		log.Println("ADD PLAYLIST TO LIKED ERROR:", err)
+		return errs.ServerError()
+	}
+	return nil
+}
+
+func (r *PlaylistRepository) UserOwnPlaylist(ctx context.Context, userID, playlistID int) (bool, error) {
+	var own bool
+	err := r.db.QueryRow(ctx, "select exists(select 1 from playlists p where p.id = $1 and p.user_id = $2)", playlistID, userID).Scan(&own)
+	if err != nil {
+		log.Println("SCAN USER OWN PLAYLIST RESULT ERROR:", err)
+		return false, errs.ServerError()
+	}
+	return own, nil
+}
+
+func (r *PlaylistRepository) EditPlaylist(ctx context.Context, title, newVolume string, description *string, playlistID int) (string, error) {
+	setClauses := []string{}
+	args := []interface{}{}
+	argPos := 1
+
+	if title != "" {
+		setClauses = append(setClauses, fmt.Sprintf("title = $%d", argPos))
+		args = append(args, title)
+		argPos++
+	}
+
+	if description != nil {
+		setClauses = append(setClauses, fmt.Sprintf("description = $%d", argPos))
+		args = append(args, description)
+		argPos++
+	}
+
+	if newVolume != "" {
+		setClauses = append(setClauses, fmt.Sprintf("volume_path = $%d", argPos))
+		args = append(args, newVolume)
+		argPos++
+	}
+
+	args = append(args, playlistID)
+	if len(setClauses) == 0 {
+		return "", errs.New(http.StatusOK, "Нечего обновлять")
+	}
+
+	query := fmt.Sprintf("update playlists set %s where id=$%v returning OLD.volume_path", strings.Join(setClauses, ", "), len(args))
+
+	var oldVolumePath string
+
+	err := r.db.QueryRow(ctx, query, args...).Scan(&oldVolumePath)
+	if err != nil {
+		log.Println("UPDATING PLAYLIST ERROR:", err)
+		return "", errs.ServerError()
+	}
+	return oldVolumePath, nil
+}
+
+func (r *PlaylistRepository) DeletePlaylist(ctx context.Context, playlistID int) (string, error) {
+	query := `delete from playlists where id = $1 returning volume_path`
+	var oldVolume string
+	err := r.db.QueryRow(ctx, query, playlistID).Scan(&oldVolume)
+	if err != nil {
+		log.Println("DELETE PLAYLIST ERROR:", err)
+		return "", errs.ServerError()
+	}
+	return oldVolume, nil
+}
+
+func (r *PlaylistRepository) GetInfo(ctx context.Context, userID, playlistID int) (*tdo.PlaylistInfo, error) {
+	query := `select 
+  p.id,
+  p.user_id,
+  a.name as username,
+  a.photo_file,
+  p.title,
+  p.description,
+  p.volume_path,
+  p.is_private,
+  p.is_available,
+  count(ps.id) as "songs_count",
+  coalesce(sum(s.duration),0) as "playlist_duration",
+  (select count(1) from liked_playlists lp where lp.playlist_id = p.id and lp.user_id <> p.user_id) as "likes_count"
+  
+from playlists p
+join users a on p.user_id = a.id
+left join playlists_songs ps on ps.playlist_id = p.id
+left join songs s on s.id = ps.song_id
+where p.id = $1
+  and ((p.is_private = false and p.is_available = true ) or p.user_id = $2)
+group by p.id,p.user_id,a.name,a.photo_file,p.title,p.description,p.volume_path,p.is_private,p.is_available
+`
+	var playlist tdo.PlaylistInfo
+	err := r.db.QueryRow(ctx, query, playlistID, userID).Scan(
+		&playlist.Id,
+		&playlist.UserInfo.Id,
+		&playlist.UserInfo.Name,
+		&playlist.UserInfo.Photo_file,
+		&playlist.Title,
+		&playlist.Description,
+		&playlist.VolumePath,
+		&playlist.IsPrivate,
+		&playlist.IsAvailable,
+		&playlist.SongsCount,
+		&playlist.Duration,
+		&playlist.LikesCount,
+	)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, errs.New(http.StatusNotFound, "плейлист не существует или приватен")
+		}
+		log.Println("ERROR GET PLAYLIST INFO:", err)
+		return nil, errs.ServerError()
+	}
+
+	return &playlist, nil
+}
+
+func (r *PlaylistRepository) GetSongs(ctx context.Context, userID, playlistID, start, count int) ([]response.GetSongResponse, error) {
+	query := `select 
+	s.id,
+	u.id as "user_id",
+	u.name as "username",
+	u.photo_file as "photo_file",
+	s.author,
+	s.name,
+	s.duration,
+	s.file_path,
+	s.volume_path,
+	s.is_available,
+	sl.listens,
+	(select count(1) from liked_songs where id = s.id and s.user_id <> $2) as "likes",
+	ps.added_at
+from playlists_songs ps
+join songs s on s.id = ps.song_id
+join users u on u.id = s.user_id
+join playlists p on p.id = ps.playlist_id
+join songs_listens sl on sl.song_id = s.id
+where ps.playlist_id = $1 and (s.is_available = true or s.user_id = $2) and (p.is_private = false or p.user_id = $2)
+offset $3
+limit $4
+`
+	rows, err := r.db.Query(ctx, query, playlistID, userID, start, count)
+	if err != nil {
+		log.Println("ERROR GET PLAYLIST SONGS:", err)
+		return []response.GetSongResponse{}, errs.ServerError()
+	}
+	defer rows.Close()
+
+	var songs []response.GetSongResponse
+
+	for rows.Next() {
+		var song response.GetSongResponse
+		err := rows.Scan(&song.Id, &song.UserInfo.Id, &song.UserInfo.Name, &song.UserInfo.PhotoFile, &song.Author, &song.Name, &song.Duration, &song.FilePath, &song.VolumePath, &song.IsAvailable, &song.Listens, &song.Likes, &song.AddedAt)
+		if err != nil {
+			log.Println("ERROR SCAN PLAYLIST SONG:", err)
+			continue
+		}
+		songs = append(songs, song)
+	}
+	return songs, nil
+}
+
+func (r *PlaylistRepository) ChangeStatus(ctx context.Context, playlistID int, status string) error {
+	_, err := r.db.Exec(ctx, "update playlists set is_private = $1 where id = $2", status, playlistID)
+	if err != nil {
+		log.Println("EDIT PLAYLIST PRIVATE STATUS ERROR:", err)
+		return errs.ServerError()
+	}
+	return nil
+}
+
+func (r *PlaylistRepository) PlaylistLiked(ctx context.Context, userID, playlistID int) bool {
+	query := `select exists(select 1 from liked_playlists where user_id = $1 and playlist_id = $2)`
+	var alreadyLiked bool
+	err := r.db.QueryRow(ctx, query, userID, playlistID).Scan(&alreadyLiked)
+	if err != nil {
+		log.Println("CHECK LIKED PLAYLIST ERROR:", err)
+		return false
+	}
+	return alreadyLiked
+}
+
+func (r *PlaylistRepository) AccessToPlaylist(ctx context.Context, userID, playlistID int) bool {
+	var access bool
+	err := r.db.QueryRow(ctx, "select exists(select 1 from playlists where id = $1 and (user_id = $2 or is_private = false))", playlistID, userID).Scan(&access)
+	if err != nil {
+		log.Println("ERROR WHILE CHECK ACCESS TO PLAYLIST:", err)
+		return false
+	}
+	return access
+}
+
+func (r PlaylistRepository) Unlike(ctx context.Context, userID, playlistID int) error {
+	query := `delete from liked_playlists lp where user_id = $1 and playlist_id = $2`
+	_, err := r.db.Exec(ctx, query, userID, playlistID)
+	if err != nil {
+		log.Println("ERROR UNLIKE PLAYLIST:", err)
+		return errs.ServerError()
+	}
+	return nil
+}
+
+func (r PlaylistRepository) AddSongToPlaylist(ctx context.Context, playlistID, songID int) error {
+	query := `insert into playlists_songs (playlist_id,song_id,added_at) values ($1,$2,$3)`
+	_, err := r.db.Exec(ctx, query, playlistID, songID, time.Now())
+	if err != nil {
+		log.Println("ERROR ADD SONG TO PLAYLIST:", err)
+		return errs.ServerError()
+	}
+	return nil
+}
+
+func (r *PlaylistRepository) DeleteSongFromPlaylist(ctx context.Context, songID, playlistID int) error {
+	query := `delete from playlists_songs where song_id = $1 and playlist_id = $2`
+	_, err := r.db.Exec(ctx, query, songID, playlistID)
+	if err != nil {
+		log.Println("DELETE SONG FROM PLAYLIST ERROR:", err)
+		return errs.ServerError()
+	}
+	return nil
+}
+
+func (r *PlaylistRepository) SongInPlaylist(ctx context.Context, songID, playlistID int) bool {
+	query := `select exists(select 1 from playlists_songs where song_id = $1 and playlist_id = $2)`
+	var alreadyInPlaylist bool
+	err := r.db.QueryRow(ctx, query, songID, playlistID).Scan(&alreadyInPlaylist)
+	if err != nil {
+		log.Println("CHECK SONG IN PLAYLIST ERROR:", err)
+		return false
+	}
+	return alreadyInPlaylist
+}
