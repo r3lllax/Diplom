@@ -34,8 +34,10 @@ type SongInLikes struct {
 	UserInfo   ShortUserInfo `json:"userInfo" form:"userInfo" validate:""`
 	Author     string        `json:"author" form:"author" validate:""`
 	Name       string        `json:"name" form:"name" validate:""`
+	FilePath   string        `json:"file_path" form:"file_path" validate:""`
 	VolumePath string        `json:"volume_path" form:"volume_path" validate:""`
 	LikedAt    time.Time     `json:"liked_at" form:"liked_at" validate:""`
+	IsLiked    bool          `json:"is_liked" form:"is_liked" validate:""`
 }
 
 type SongInGlobalSearch struct {
@@ -48,4 +50,5 @@ type SongInGlobalSearch struct {
 	VolumePath string        `json:"volume_path" form:"volume_path" validate:""`
 	Listens    int           `json:"listens" form:"listens" validate:""`
 	Likes      int           `json:"likes" form:"likes" validate:""`
+	IsLiked    bool          `json:"is_liked" form:"is_liked" validate:""`
 }

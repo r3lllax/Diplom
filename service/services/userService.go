@@ -128,6 +128,13 @@ func (s *UserService) GetUserListenTime(ctx context.Context, userID int) (int, e
 	}
 	return time, nil
 }
+func (s *UserService) GetUserLikesDuration(ctx context.Context, userID int) (int, error) {
+	time, err := s.repositories.UserRepository.GetUserLikesDuration(ctx, userID)
+	if err != nil {
+		return 0, err
+	}
+	return time, nil
+}
 
 func (s *UserService) GetUserLikesCount(ctx context.Context, userID int) (int, error) {
 	likesCount, err := s.repositories.UserRepository.GetUserLikesCount(ctx, userID)

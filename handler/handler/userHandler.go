@@ -182,14 +182,23 @@ func (h *UserHandlers) GetUserLikes(ctx *gin.Context) {
 		})
 		return
 	}
+
 	if len(likedSongs) == 0 && start > 0 {
 		ctx.JSON(http.StatusNoContent, gin.H{})
 
 		return
 	}
+	duration, err := h.service.GetUserLikesDuration(ctx.Request.Context(), userID)
+	if err != nil {
+		if errors.As(err, &ErrWithCode) {
+			errs.ThrowError(ctx, ErrWithCode.Code, ErrWithCode.Message)
+			return
+		}
+	}
 
 	ctx.JSON(http.StatusOK, gin.H{
-		"songs": likedSongs,
+		"duration": duration,
+		"songs":    likedSongs,
 	})
 
 }

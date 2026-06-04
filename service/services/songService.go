@@ -223,24 +223,26 @@ func (s *SongService) AddListen(ctx context.Context, userID, songID int) error {
 			return err
 		}
 	}
-	song, err := s.repositories.SongRepository.GetSongInfo(ctx, songID)
-	if err != nil {
-		return err
-	}
-	listensInfo, err := s.repositories.SongRepository.GetUserSongListens(ctx, userID, songID)
-	if err != nil {
-		return err
-	}
 
-	if listensInfo.LastListenTime != nil {
-		timeListenAccessTreshold := listensInfo.LastListenTime.Add(time.Duration(song.Duration) * time.Second)
-		canAddListen := time.Now().UTC().After(timeListenAccessTreshold)
-		if !canAddListen {
-			return errs.New(http.StatusForbidden, "нельзя добавить прослушивание(слишком короткий промежуток)")
-		}
-	}
+	// Проверка на время выполняется на фронте, раскоментировать чтобы прослушивания засчитывались раз в длительность песни
+	// song, err := s.repositories.SongRepository.GetSongInfo(ctx, songID)
+	// if err != nil {
+	// 	return err
+	// }
+	// listensInfo, err := s.repositories.SongRepository.GetUserSongListens(ctx, userID, songID)
+	// if err != nil {
+	// 	return err
+	// }
 
-	err = s.repositories.SongRepository.AddListenToUserSongListens(ctx, userID, songID)
+	// if listensInfo.LastListenTime != nil {
+	// 	timeListenAccessTreshold := listensInfo.LastListenTime.Add(time.Duration(song.Duration) * time.Second)
+	// 	canAddListen := time.Now().UTC().After(timeListenAccessTreshold)
+	// 	if !canAddListen {
+	// 		return errs.New(http.StatusForbidden, "нельзя добавить прослушивание(слишком короткий промежуток)")
+	// 	}
+	// }
+
+	err := s.repositories.SongRepository.AddListenToUserSongListens(ctx, userID, songID)
 	if err != nil {
 		return err
 	}

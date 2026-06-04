@@ -113,7 +113,8 @@ func (r *UserRepository) DeleteUser(ctx context.Context, userID int) error {
 
 func (r *UserRepository) GetLikedSongs(ctx context.Context, targetUserID, userID, start, count int) ([]model.SongInLikes, error) {
 
-	query := `select song_id as "song_id",user_id,username,user_pfp,author,song_name,volume_path,liked_at
+	query := `select song_id as "song_id",user_id,username,user_pfp,author,song_name,file_path,volume_path,liked_at,
+	EXISTS((select 1 from liked_songs ls where ls.song_id = song_id and ls.user_id = $2)) as "is_liked"
 from (
 	select ls.song_id,ls.user_id,u.name as "username",u.photo_file as "user_pfp",s.author,s.name as "song_name",s.file_path,s.volume_path,s.duration,s.is_available,ls.liked_at
 	from liked_songs ls
@@ -138,7 +139,7 @@ limit $4
 
 	for rows.Next() {
 		var song model.SongInLikes
-		err := rows.Scan(&song.Id, &song.UserInfo.Id, &song.UserInfo.Name, &song.UserInfo.Photo_file, &song.Author, &song.Name, &song.VolumePath, &song.LikedAt)
+		err := rows.Scan(&song.Id, &song.UserInfo.Id, &song.UserInfo.Name, &song.UserInfo.Photo_file, &song.Author, &song.Name, &song.FilePath, &song.VolumePath, &song.LikedAt, &song.IsLiked)
 		if err != nil {
 			log.Println("SCAN SONG IN LIKED SONGS ERROR:", err)
 			continue
@@ -150,6 +151,23 @@ limit $4
 
 }
 
+func (r *UserRepository) GetUserLikesDuration(ctx context.Context, userID int) (int, error) {
+	query := `select coalesce(sum(s.duration),0) as "duration"
+from liked_songs ls
+join songs s on s.id = ls.song_id
+where ls.user_id = $1
+	`
+
+	var duration int
+
+	err := r.db.QueryRow(ctx, query, userID).Scan(&duration)
+	if err != nil {
+		log.Println("ERROR USER LIKES DURATION:", err)
+		return 0, errs.ServerError()
+	}
+
+	return duration, nil
+}
 func (r *UserRepository) GetUserSongs(ctx context.Context, userID, start, count int) ([]model.Song, error) {
 
 	query := `select id,author,name,duration,file_path,volume_path,uploaded_at,is_available

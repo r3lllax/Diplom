@@ -17,6 +17,7 @@ type GetSongResponse struct {
 	Listens     int                  `json:"listens" form:"listens" validate:""`
 	Likes       int                  `json:"likes" form:"likes" validate:""`
 	AddedAt     time.Time            `json:"added_at" form:"added_at" validate:""`
+	IsLiked     bool                 `json:"is_liked" form:"is_liked" validate:""`
 }
 type GetSongsResponse struct {
 	Data []model.SongInGlobalSearch `json:"data"`

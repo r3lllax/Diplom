@@ -142,7 +142,8 @@ func (r *SongRepository) GetSong(ctx context.Context, userID, songID int) (*resp
 		s.volume_path,
 		s.is_available,
 		sl.listens,
-		(select count(1) from liked_songs where id = s.id and s.user_id <> $2) as "likes"
+		(select count(1) from liked_songs where id = s.id and s.user_id <> $2) as "likes",
+		EXISTS((select 1 from liked_songs ls where ls.song_id = s.id and ls.user_id = $2)) as "is_liked"
 from songs s 
 join users u on u.id = s.user_id
 join songs_listens sl on sl.song_id = s.id
@@ -162,6 +163,7 @@ where s.id = $1 and (s.is_available = true or s.user_id = $2)`
 		&findedSong.IsAvailable,
 		&findedSong.Listens,
 		&findedSong.Likes,
+		&findedSong.IsLiked,
 	)
 
 	if err != nil {
@@ -187,7 +189,8 @@ func (r *SongRepository) GetSongs(ctx context.Context, userID, start, count int)
 		s.file_path, 
 		s.volume_path, 
 		sl.listens,
-		COUNT(ls.song_id) AS likes
+		COUNT(ls.song_id) AS likes,
+		EXISTS((select 1 from liked_songs ls where song_id = s.id and ls.user_id = $1)) as "is_liked"
 	FROM songs s
 	INNER JOIN users u ON u.id = s.user_id
 	INNER JOIN songs_listens sl ON sl.song_id = s.id
@@ -208,7 +211,7 @@ func (r *SongRepository) GetSongs(ctx context.Context, userID, start, count int)
 
 	for rows.Next() {
 		var song model.SongInGlobalSearch
-		err := rows.Scan(&song.Id, &song.UserInfo.Id, &song.UserInfo.Name, &song.UserInfo.Photo_file, &song.Name, &song.Duration, &song.Author, &song.FilePath, &song.VolumePath, &song.Listens, &song.Likes)
+		err := rows.Scan(&song.Id, &song.UserInfo.Id, &song.UserInfo.Name, &song.UserInfo.Photo_file, &song.Name, &song.Duration, &song.Author, &song.FilePath, &song.VolumePath, &song.Listens, &song.Likes, &song.IsLiked)
 		if err != nil {
 			log.Println("SCAN SONG IN GLOBAL ERROR:", err)
 			continue
