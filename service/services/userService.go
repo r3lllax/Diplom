@@ -120,6 +120,13 @@ func (s *UserService) GetUserListenStatistics(ctx context.Context, userID, start
 	}
 	return statistics, nil
 }
+func (s *UserService) UserRecentlyListenStatistics(ctx context.Context, userID int) ([]tdo.UserSongListenStatistic, error) {
+	statistics, err := s.repositories.UserRepository.GetUserLastListenTracks(ctx, userID)
+	if err != nil {
+		return []tdo.UserSongListenStatistic{}, err
+	}
+	return statistics, nil
+}
 
 func (s *UserService) GetUserGeneralListenStats(ctx context.Context, userID int) (int, int, int, int, error) {
 	songsCount, timeCount, favoritesCount, likesCount, err := s.repositories.UserRepository.GetUserGeneralListenStats(ctx, userID)
@@ -130,6 +137,13 @@ func (s *UserService) GetUserGeneralListenStats(ctx context.Context, userID int)
 }
 func (s *UserService) GetUserLikesDuration(ctx context.Context, userID int) (int, error) {
 	time, err := s.repositories.UserRepository.GetUserLikesDuration(ctx, userID)
+	if err != nil {
+		return 0, err
+	}
+	return time, nil
+}
+func (s *UserService) GetUserLikesTotalRows(ctx context.Context, targetUserID, userID int) (int, error) {
+	time, err := s.repositories.UserRepository.GetUserLikesTotalRows(ctx, targetUserID, userID)
 	if err != nil {
 		return 0, err
 	}

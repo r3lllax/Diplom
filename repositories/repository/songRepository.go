@@ -226,6 +226,23 @@ func (r *SongRepository) GetSongs(ctx context.Context, userID, start, count int,
 
 }
 
+func (r *SongRepository) GetSongsCount(ctx context.Context, userID int) (int, error) {
+	query := `SELECT count (1)
+		FROM songs s
+		WHERE s.is_available = TRUE OR s.user_id = $1
+	`
+
+	songsCount := 0
+	err := r.db.QueryRow(ctx, query, userID).Scan(&songsCount)
+	if err != nil {
+		log.Println("ERROR WHILE GET SONGS TOTAL COUNT:", err)
+		return songsCount, errs.ServerError()
+	}
+
+	return songsCount, nil
+
+}
+
 func (r *SongRepository) ChangeStatus(ctx context.Context, songID int, status string) error {
 
 	_, err := r.db.Exec(ctx, "update songs set is_available = $1 where id = $2", status, songID)

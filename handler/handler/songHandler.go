@@ -140,8 +140,10 @@ func (h *SongHandlers) GetSongs(ctx *gin.Context) {
 			return
 		}
 	}
+
 	ctx.JSON(http.StatusOK, gin.H{
-		"data": songs.Data,
+		"totalRows": songs.TotalRows,
+		"data":      songs.Data,
 	})
 }
 

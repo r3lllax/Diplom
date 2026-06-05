@@ -157,8 +157,12 @@ func (s *SongService) GetSongs(ctx context.Context, userID, start, count int, so
 	if err != nil {
 		return nil, err
 	}
-
+	totalRows, err := s.repositories.SongRepository.GetSongsCount(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
 	findedSongs := response.GetSongsResponse{}
+	findedSongs.TotalRows = totalRows
 	findedSongs.Data = songs
 
 	return &findedSongs, nil

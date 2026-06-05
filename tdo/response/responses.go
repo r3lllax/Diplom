@@ -20,7 +20,8 @@ type GetSongResponse struct {
 	IsLiked     bool                 `json:"is_liked" form:"is_liked" validate:""`
 }
 type GetSongsResponse struct {
-	Data []model.SongInGlobalSearch `json:"data"`
+	TotalRows int                        `json:"totalRows"`
+	Data      []model.SongInGlobalSearch `json:"data"`
 }
 
 type GetSongResponse_User struct {

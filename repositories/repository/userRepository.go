@@ -168,6 +168,22 @@ where ls.user_id = $1
 
 	return duration, nil
 }
+func (r *UserRepository) GetUserLikesTotalRows(ctx context.Context, targetUserID, userID int) (int, error) {
+	query := `select count(1)
+from liked_songs ls
+join songs s on s.id = ls.song_id
+where ls.user_id = $1 and (s.is_available = true or s.user_id = $2)`
+
+	var rows int
+
+	err := r.db.QueryRow(ctx, query, targetUserID, userID).Scan(&rows)
+	if err != nil {
+		log.Println("ERROR GET USER LIKES TOTAL ROWS:", err)
+		return 0, errs.ServerError()
+	}
+
+	return rows, nil
+}
 func (r *UserRepository) GetUserSongs(ctx context.Context, userID, start, count int) ([]model.Song, error) {
 
 	query := `select id,author,name,duration,file_path,volume_path,uploaded_at,is_available
@@ -208,6 +224,38 @@ func (r *UserRepository) EditPrivateStatus(ctx context.Context, status bool, use
 		return errs.ServerError()
 	}
 	return nil
+}
+func (r *UserRepository) GetUserLastListenTracks(ctx context.Context, userID int) ([]tdo.UserSongListenStatistic, error) {
+
+	query := `select ul.song_id,s.Author,s.name,s.volume_path,ul.last_listen_time,s.is_available,ul.listens,(s.duration * ul.listens) as "listen_time"
+from user_songs_listens ul
+join songs s on s.id = ul.song_id
+where ul.user_id = $1
+order by ul.last_listen_time desc
+limit 5
+`
+
+	rows, err := r.db.Query(ctx, query, userID)
+	if err != nil {
+		log.Println("GET USER LAST LISTENS ERROR:", err)
+		return []tdo.UserSongListenStatistic{}, errs.ServerError()
+	}
+	defer rows.Close()
+
+	var list []tdo.UserSongListenStatistic
+
+	for rows.Next() {
+		var song tdo.UserSongListenStatistic
+		err := rows.Scan(&song.Id, &song.Author, &song.Name, &song.VolumePath, &song.LastListenTime, &song.IsAvailable, &song.Listens, &song.ListenTime)
+		if err != nil {
+			log.Println("SCAN SONG FROM USER LAST LISTENS ERROR:", err)
+			continue
+		}
+		list = append(list, song)
+
+	}
+
+	return list, nil
 }
 
 func (r *UserRepository) GetUserListenStatistics(ctx context.Context, userID, start, count int, countSort bool) ([]tdo.UserSongListenStatistic, error) {
