@@ -176,7 +176,7 @@ where s.id = $1 and (s.is_available = true or s.user_id = $2)`
 	return &findedSong, nil
 }
 
-func (r *SongRepository) GetSongs(ctx context.Context, userID, start, count int) ([]model.SongInGlobalSearch, error) {
+func (r *SongRepository) GetSongs(ctx context.Context, userID, start, count int, sorted bool) ([]model.SongInGlobalSearch, error) {
 	query := `
 	SELECT 
 		s.id, 
@@ -197,10 +197,14 @@ func (r *SongRepository) GetSongs(ctx context.Context, userID, start, count int)
 	LEFT JOIN liked_songs ls ON ls.song_id = s.id
 	WHERE s.is_available = TRUE OR s.user_id = $1
 	GROUP BY s.id, u.id, sl.listens
+	`
+	if sorted {
+		query += "\n\torder by sl.listens desc"
+	}
+	query += `
 	OFFSET $2
 	LIMIT $3
 	`
-
 	var songs []model.SongInGlobalSearch
 	rows, err := r.db.Query(ctx, query, userID, start, count)
 	if err != nil {

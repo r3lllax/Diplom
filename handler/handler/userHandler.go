@@ -233,8 +233,11 @@ func (h *UserHandlers) UserSongs(ctx *gin.Context) {
 func (h *UserHandlers) UserListenStatistics(ctx *gin.Context) {
 	start, count := handlerHelpers.GetPaginationFromRequest(ctx)
 	userID := ctx.Keys[keys.UserIDKey].(int)
+
+	countSort := ctx.Query("countSort") == "true"
+
 	var ErrWithCode errs.ErrorWithCode
-	statistic, err := h.service.GetUserListenStatistics(ctx, userID, start, count)
+	statistic, err := h.service.GetUserListenStatistics(ctx, userID, start, count, countSort)
 	if err != nil {
 		if errors.As(err, &ErrWithCode) {
 			errs.ThrowError(ctx, ErrWithCode.Code, ErrWithCode.Message)
@@ -258,10 +261,10 @@ func (h *UserHandlers) UserListenStatistics(ctx *gin.Context) {
 	})
 }
 
-func (h *UserHandlers) UserListenTime(ctx *gin.Context) {
+func (h *UserHandlers) UserGeneralListenStats(ctx *gin.Context) {
 	userID := ctx.Keys[keys.UserIDKey].(int)
 	var ErrWithCode errs.ErrorWithCode
-	listenTime, err := h.service.GetUserListenTime(ctx, userID)
+	listenSongsCount, listenTime, likesCount, userSongsLikes, err := h.service.GetUserGeneralListenStats(ctx, userID)
 	if err != nil {
 		if errors.As(err, &ErrWithCode) {
 			errs.ThrowError(ctx, ErrWithCode.Code, ErrWithCode.Message)
@@ -270,7 +273,10 @@ func (h *UserHandlers) UserListenTime(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, gin.H{
-		"totalListenTime": listenTime,
+		"listenSongsCount": listenSongsCount,
+		"totalListenTime":  listenTime,
+		"likesCount":       likesCount,
+		"userSongsLikes":   userSongsLikes,
 	})
 }
 

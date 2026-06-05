@@ -210,16 +210,24 @@ func (r *UserRepository) EditPrivateStatus(ctx context.Context, status bool, use
 	return nil
 }
 
-func (r *UserRepository) GetUserListenStatistics(ctx context.Context, userID, start, count int) ([]tdo.UserSongListenStatistic, error) {
+func (r *UserRepository) GetUserListenStatistics(ctx context.Context, userID, start, count int, countSort bool) ([]tdo.UserSongListenStatistic, error) {
 
 	query := `select ul.song_id,s.Author,s.name,s.volume_path,ul.last_listen_time,s.is_available,ul.listens,(s.duration * ul.listens) as "listen_time"
 from user_songs_listens ul
 join songs s on s.id = ul.song_id 
 where ul.user_id = $1
-order by ul.listens desc 
-offset $2
-limit $3
 `
+	if countSort {
+		query += `order by listen_time desc `
+	} else {
+		query += `order by ul.listens desc `
+
+	}
+
+	query += `
+	offset $2
+	limit $3
+	`
 
 	rows, err := r.db.Query(ctx, query, userID, start, count)
 	if err != nil {
@@ -244,22 +252,35 @@ limit $3
 	return list, nil
 }
 
-func (r *UserRepository) GetTotalListentime(ctx context.Context, userID int) (int, error) {
-	query := `select coalesce(sum(s.duration * ul.listens ),0) as "listen_time"
+func (r *UserRepository) GetUserGeneralListenStats(ctx context.Context, userID int) (int, int, int, int, error) {
+	query := `select 
+	sum(ul.listens) as "listenSongsCount",
+	coalesce(sum(s.duration * ul.listens ),0) as "listen_time",
+	(select count(1) 
+from liked_songs ul
+join songs s on s.id=ul.song_id
+where ul.user_id = $1) as "likesCount",
+	(select sum(1)
+	from liked_songs ls
+	join songs s on ls.song_id = s.id
+	where s.user_id = $1 and ls.user_id <> $1) as "userSongsLikes"
 from user_songs_listens ul
 join songs s on s.id=ul.song_id
 where ul.user_id = $1
 `
 
-	var listenTime int
+	var listenSongsCount int
+	var listen_time int
+	var likesCount int
+	var userSongsLikes int
 
-	err := r.db.QueryRow(ctx, query, userID).Scan(&listenTime)
+	err := r.db.QueryRow(ctx, query, userID).Scan(&listenSongsCount, &listen_time, &likesCount, &userSongsLikes)
 	if err != nil {
-		log.Println("ERROR GETTING USER TOTAL LISTEN TIME:", err)
-		return 0, errs.ServerError()
+		log.Println("ERROR GETTING USER GENERAL STATISTICS:", err)
+		return 0, 0, 0, 0, errs.ServerError()
 	}
 
-	return listenTime, nil
+	return listenSongsCount, listen_time, likesCount, userSongsLikes, nil
 }
 
 func (r *UserRepository) GetUserLikesCount(ctx context.Context, userID int) (int, error) {

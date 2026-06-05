@@ -113,20 +113,20 @@ func (s *UserService) GetUserSongs(ctx context.Context, userID, start, count int
 	return tdoSongs, nil
 }
 
-func (s *UserService) GetUserListenStatistics(ctx context.Context, userID, start, count int) ([]tdo.UserSongListenStatistic, error) {
-	statistics, err := s.repositories.UserRepository.GetUserListenStatistics(ctx, userID, start, count)
+func (s *UserService) GetUserListenStatistics(ctx context.Context, userID, start, count int, countSort bool) ([]tdo.UserSongListenStatistic, error) {
+	statistics, err := s.repositories.UserRepository.GetUserListenStatistics(ctx, userID, start, count, countSort)
 	if err != nil {
 		return []tdo.UserSongListenStatistic{}, err
 	}
 	return statistics, nil
 }
 
-func (s *UserService) GetUserListenTime(ctx context.Context, userID int) (int, error) {
-	time, err := s.repositories.UserRepository.GetTotalListentime(ctx, userID)
+func (s *UserService) GetUserGeneralListenStats(ctx context.Context, userID int) (int, int, int, int, error) {
+	songsCount, timeCount, favoritesCount, likesCount, err := s.repositories.UserRepository.GetUserGeneralListenStats(ctx, userID)
 	if err != nil {
-		return 0, err
+		return 0, 0, 0, 0, err
 	}
-	return time, nil
+	return songsCount, timeCount, favoritesCount, likesCount, nil
 }
 func (s *UserService) GetUserLikesDuration(ctx context.Context, userID int) (int, error) {
 	time, err := s.repositories.UserRepository.GetUserLikesDuration(ctx, userID)

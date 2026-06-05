@@ -152,8 +152,8 @@ func (s *SongService) GetSong(ctx context.Context, userID, songID int) (*respons
 	return findedSong, nil
 }
 
-func (s *SongService) GetSongs(ctx context.Context, userID, start, count int) (*response.GetSongsResponse, error) {
-	songs, err := s.repositories.SongRepository.GetSongs(ctx, userID, start, count)
+func (s *SongService) GetSongs(ctx context.Context, userID, start, count int, sorted bool) (*response.GetSongsResponse, error) {
+	songs, err := s.repositories.SongRepository.GetSongs(ctx, userID, start, count, sorted)
 	if err != nil {
 		return nil, err
 	}

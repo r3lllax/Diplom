@@ -42,7 +42,7 @@ func Init(db *pgxpool.Pool, redis *redis.Client) *gin.Engine {
 		userRoutes.GET("/:id/likes", userHandlers.GetUserLikes)
 
 		userRoutes.GET("/listen-statistics", userHandlers.UserListenStatistics)
-		userRoutes.GET("/listen-time", userHandlers.UserListenTime)
+		userRoutes.GET("/general-listen_statistics", userHandlers.UserGeneralListenStats)
 		userRoutes.GET("/likes-count", userHandlers.UserLikesCount)
 
 		myTracks.GET("/listen-statistics", userHandlers.UserTracksListenStatistics)
