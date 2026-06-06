@@ -76,3 +76,8 @@ type PlaylistInfo struct {
 	LikesCount  *int                `json:"likes_count" form:"likes_count" validate:""`
 	IsLiked     bool                `json:"is_liked" form:"is_liked" validate:""`
 }
+type ShortPlaylistWithSongContext struct {
+	Id      int    `json:"id" form:"id" validate:""`
+	Title   string `json:"title" form:"title" validate:""`
+	HasSong bool   `json:"has_song" form:"has_song" validate:""`
+}

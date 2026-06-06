@@ -220,7 +220,7 @@ limit $3
 
 func (r *PlaylistRepository) GetPlaylistsTotalCount(ctx context.Context, userID int) (int, error) {
 	query := `
-	select count(1)
+	select count(distinct p.id)
 from playlists p
 join users a on p.user_id = a.id
 left join playlists_songs ps on ps.playlist_id = p.id
@@ -299,6 +299,45 @@ limit $4
 		songs = append(songs, song)
 	}
 	return songs, nil
+}
+func (r *PlaylistRepository) UserPlaylistsWithSongContext(ctx context.Context, userID, songID int) ([]tdo.ShortPlaylistWithSongContext, error) {
+	query := `
+	SELECT 
+    p.id, 
+    p.title,
+    EXISTS (
+        SELECT 1 
+        FROM playlists_songs ps 
+        WHERE ps.playlist_id = p.id AND ps.song_id = $2
+    ) AS has_song
+FROM liked_playlists lp
+JOIN playlists p ON p.id = lp.playlist_id
+WHERE lp.user_id = $1 and p.user_id = $1;
+
+`
+	rows, err := r.db.Query(ctx, query, userID, songID)
+	if err != nil {
+		log.Println("ERROR GET PLAYLIST SONGS:", err)
+		return []tdo.ShortPlaylistWithSongContext{}, errs.ServerError()
+	}
+	defer rows.Close()
+
+	var playlists []tdo.ShortPlaylistWithSongContext
+
+	for rows.Next() {
+		var playlist tdo.ShortPlaylistWithSongContext
+		err := rows.Scan(
+			&playlist.Id,
+			&playlist.Title,
+			&playlist.HasSong,
+		)
+		if err != nil {
+			log.Println("ERROR SCAN PLAYLISTS WITH SONG CONTEXT:", err)
+			continue
+		}
+		playlists = append(playlists, playlist)
+	}
+	return playlists, nil
 }
 func (r *PlaylistRepository) GetSongsTotalRows(ctx context.Context, userID, playlistID int) (int, error) {
 	query := `select count(1)

@@ -146,6 +146,26 @@ func (h *SongHandlers) GetSongs(ctx *gin.Context) {
 		"data":      songs.Data,
 	})
 }
+func (h *SongHandlers) UserPlaylistsWithSongContext(ctx *gin.Context) {
+	songID, err := strconv.Atoi(ctx.Param("id"))
+	if err != nil {
+		errs.ThrowError(ctx, http.StatusBadRequest, "некорректный id трека")
+		return
+	}
+	userID := ctx.Keys[keys.UserIDKey].(int)
+	var ErrWithCode errs.ErrorWithCode
+	playlists, err := h.service.UserPlaylistsWithSongContext(ctx.Request.Context(), userID, songID)
+	if err != nil {
+		if errors.As(err, &ErrWithCode) {
+			errs.ThrowError(ctx, ErrWithCode.Code, ErrWithCode.Message)
+			return
+		}
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{
+		"playlists": playlists,
+	})
+}
 
 func (h *SongHandlers) ChangeSongStatus(ctx *gin.Context) {
 	songID, err := strconv.Atoi(ctx.Param("id"))

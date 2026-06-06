@@ -59,6 +59,7 @@ func Init(db *pgxpool.Pool, redis *redis.Client) *gin.Engine {
 		songRoutes.PATCH("/:id", songsHandlers.EditSong)
 		songRoutes.GET("/:id", songsHandlers.GetSong)
 		songRoutes.GET("/", songsHandlers.GetSongs)
+		songRoutes.GET("/:id/user-playlists", songsHandlers.UserPlaylistsWithSongContext)
 		songRoutes.PATCH("/:id/set-available/:status", songsHandlers.ChangeSongStatus)
 		songRoutes.POST("/:id/like", songsHandlers.LikeSong)
 		songRoutes.POST("/:id/unlike", songsHandlers.UnLikeSong)

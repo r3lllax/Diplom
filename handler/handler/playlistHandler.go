@@ -137,8 +137,8 @@ func (h *PlaylistHandlers) GetPlaylists(ctx *gin.Context) {
 		}
 	}
 	ctx.JSON(http.StatusOK, gin.H{
-		"totalRows":     totalRows,
-		"playlist_info": info,
+		"totalRows": totalRows,
+		"playlists": info,
 	})
 }
 

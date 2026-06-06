@@ -5,6 +5,7 @@ import (
 	"GIN/internal/files"
 	"GIN/keys"
 	"GIN/model"
+	"GIN/tdo"
 	"GIN/tdo/request"
 	"GIN/tdo/response"
 	"context"
@@ -150,6 +151,15 @@ func (s *SongService) GetSong(ctx context.Context, userID, songID int) (*respons
 	}
 
 	return findedSong, nil
+}
+func (s *SongService) UserPlaylistsWithSongContext(ctx context.Context, userID, songID int) ([]tdo.ShortPlaylistWithSongContext, error) {
+
+	playlists, err := s.repositories.PlaylistRepository.UserPlaylistsWithSongContext(ctx, userID, songID)
+	if err != nil {
+		return nil, err
+	}
+
+	return playlists, nil
 }
 
 func (s *SongService) GetSongs(ctx context.Context, userID, start, count int, sorted bool) (*response.GetSongsResponse, error) {
