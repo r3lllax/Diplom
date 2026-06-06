@@ -405,8 +405,9 @@ func (r *UserRepository) GetUserPlaylists(ctx context.Context, userID, targetUse
 	a.photo_file as author_photo_file,
 	count(ps.id) as "songs_count",
 	coalesce(sum(s.duration),0) as "playlist_duration",
-	(select count(1) from liked_playlists lp where lp.playlist_id = p.id and lp.user_id <> $1) as likes_count
-	from liked_playlists lp
+	(select count(1) from liked_playlists lp where lp.playlist_id = p.id and lp.user_id <> $1) as likes_count,
+  	(exists(select 1 from liked_playlists lp where lp.playlist_id = p.id and lp.user_id = $1)) as "is_liked"
+		from liked_playlists lp
 join playlists p on p.id = lp.playlist_id
 join users u on u.id = lp.user_id
 left join users a on p.user_id = a.id
@@ -443,7 +444,9 @@ limit $4
 			&playlist.AuthorInfo.Photo_file,
 			&playlist.SongsCount,
 			&playlist.PlaylistDuration,
-			&playlist.LikesCount)
+			&playlist.LikesCount,
+			&playlist.IsLiked,
+		)
 		if err != nil {
 			log.Println("SCAN PLAYLIST FROM USER PLAYLISTS ERROR:", err)
 			continue

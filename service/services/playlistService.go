@@ -116,12 +116,28 @@ func (s *PlaylistService) GetPlaylist(ctx context.Context, userID, playlistID in
 	return info, nil
 }
 
-func (s *PlaylistService) GetPlaylistSongs(ctx context.Context, userID, playlistID, start, count int) ([]response.GetSongResponse, error) {
+func (s *PlaylistService) GetPlaylists(ctx context.Context, userID, from, count int) ([]tdo.PlaylistInfo, int, error) {
+	info, err := s.repositories.PlaylistRepository.GetPlaylists(ctx, userID, from, count)
+	if err != nil {
+		return nil, 0, err
+	}
+	totalRows, err := s.repositories.PlaylistRepository.GetPlaylistsTotalCount(ctx, userID)
+	if err != nil {
+		return nil, 0, err
+	}
+	return info, totalRows, nil
+}
+
+func (s *PlaylistService) GetPlaylistSongs(ctx context.Context, userID, playlistID, start, count int) ([]response.GetSongResponse, int, error) {
 	songs, err := s.repositories.PlaylistRepository.GetSongs(ctx, userID, playlistID, start, count)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
-	return songs, nil
+	totalRows, err := s.repositories.PlaylistRepository.GetSongsTotalRows(ctx, userID, playlistID)
+	if err != nil {
+		return nil, 0, err
+	}
+	return songs, totalRows, nil
 }
 
 func (s *PlaylistService) EditPrivateStatus(ctx context.Context, userID, playlistID int, status bool) error {

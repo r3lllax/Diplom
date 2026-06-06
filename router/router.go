@@ -70,6 +70,7 @@ func Init(db *pgxpool.Pool, redis *redis.Client) *gin.Engine {
 		playlistRoutes.Use(tokenAuth)
 
 		playlistRoutes.POST("", playlistHandlers.CreatePlaylist)
+		playlistRoutes.GET("", playlistHandlers.GetPlaylists)
 		playlistRoutes.PATCH("/:id", playlistHandlers.EditPlaylist)
 		playlistRoutes.DELETE("/:id", playlistHandlers.DeletePlaylist)
 		playlistRoutes.GET("/:id", playlistHandlers.GetPlaylist)

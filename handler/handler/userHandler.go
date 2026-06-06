@@ -132,7 +132,7 @@ func (h *UserHandlers) GetUserPlaylists(ctx *gin.Context) {
 		return
 	}
 	var errWithCode errs.ErrorWithCode
-	playlists, err := h.service.GetUserPlaylists(ctx.Request.Context(), userID, targetUserID, start, count)
+	playlists, totalRows, err := h.service.GetUserPlaylists(ctx.Request.Context(), userID, targetUserID, start, count)
 	if err != nil {
 		if errors.As(err, &errWithCode) {
 			errs.ThrowError(ctx, errWithCode.Code, errWithCode.Message)
@@ -153,6 +153,7 @@ func (h *UserHandlers) GetUserPlaylists(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, gin.H{
+		"totalRows": totalRows,
 		"playlists": playlists,
 	})
 

@@ -125,6 +125,23 @@ func (h *PlaylistHandlers) GetPlaylist(ctx *gin.Context) {
 	})
 }
 
+func (h *PlaylistHandlers) GetPlaylists(ctx *gin.Context) {
+	start, count := handlerHelpers.GetPaginationFromRequest(ctx)
+	userID := ctx.Keys[keys.UserIDKey].(int)
+	var ErrWithCode errs.ErrorWithCode
+	info, totalRows, err := h.service.GetPlaylists(ctx.Request.Context(), userID, start, count)
+	if err != nil {
+		if errors.As(err, &ErrWithCode) {
+			errs.ThrowError(ctx, ErrWithCode.Code, ErrWithCode.Message)
+			return
+		}
+	}
+	ctx.JSON(http.StatusOK, gin.H{
+		"totalRows":     totalRows,
+		"playlist_info": info,
+	})
+}
+
 func (h *PlaylistHandlers) GetPlaylistSongs(ctx *gin.Context) {
 	start, count := handlerHelpers.GetPaginationFromRequest(ctx)
 	userID := ctx.Keys[keys.UserIDKey].(int)
@@ -134,7 +151,7 @@ func (h *PlaylistHandlers) GetPlaylistSongs(ctx *gin.Context) {
 		return
 	}
 	var ErrWithCode errs.ErrorWithCode
-	songs, err := h.service.GetPlaylistSongs(ctx.Request.Context(), userID, playlistID, start, count)
+	songs, totalRows, err := h.service.GetPlaylistSongs(ctx.Request.Context(), userID, playlistID, start, count)
 	if err != nil {
 		if errors.As(err, &ErrWithCode) {
 			errs.ThrowError(ctx, ErrWithCode.Code, ErrWithCode.Message)
@@ -153,7 +170,8 @@ func (h *PlaylistHandlers) GetPlaylistSongs(ctx *gin.Context) {
 		return
 	}
 	ctx.JSON(http.StatusOK, gin.H{
-		"songs": songs,
+		"totalRows": totalRows,
+		"songs":     songs,
 	})
 }
 

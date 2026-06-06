@@ -60,6 +60,7 @@ type UserPlaylist struct {
 	SongsCount       *int                `json:"songs_count" form:"" validate:""`
 	PlaylistDuration *int                `json:"playlist_duration" form:"" validate:""`
 	LikesCount       *int                `json:"likes_count" form:"" validate:""`
+	IsLiked          bool                `json:"is_liked" form:"is_liked" validate:""`
 }
 
 type PlaylistInfo struct {
@@ -73,4 +74,5 @@ type PlaylistInfo struct {
 	SongsCount  *int                `json:"songs_count" form:"songs_count" validate:""`
 	Duration    *int                `json:"duration" form:"duration" validate:""`
 	LikesCount  *int                `json:"likes_count" form:"likes_count" validate:""`
+	IsLiked     bool                `json:"is_liked" form:"is_liked" validate:""`
 }
