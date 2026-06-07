@@ -167,12 +167,12 @@ func (s *UserService) GetUserTracksListenStatistics(ctx context.Context, userID,
 	return list, nil
 }
 
-func (s *UserService) GetUserTracksLikesCount(ctx context.Context, userID int) (int, error) {
-	likesCount, err := s.repositories.UserRepository.GetUserTracksLikesCount(ctx, userID)
+func (s *UserService) GetUserTracksGeneralInfo(ctx context.Context, userID int) (int, int, int, int, error) {
+	songsCount, tracksLikes, tracksListensCount, publicTracks, err := s.repositories.UserRepository.GetUserTracksGeneralInfo(ctx, userID)
 	if err != nil {
-		return 0, err
+		return songsCount, tracksLikes, tracksListensCount, publicTracks, err
 	}
-	return likesCount, nil
+	return songsCount, tracksLikes, tracksListensCount, publicTracks, nil
 }
 
 func (s *UserService) GetUserPlaylists(ctx context.Context, userID, targetUserID, start, count int) ([]tdo.UserPlaylist, int, error) {

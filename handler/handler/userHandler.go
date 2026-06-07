@@ -355,10 +355,10 @@ func (h *UserHandlers) UserTracksListenStatistics(ctx *gin.Context) {
 	})
 }
 
-func (h *UserHandlers) UserTracksLikesCount(ctx *gin.Context) {
+func (h *UserHandlers) UserTracksGeneralInfo(ctx *gin.Context) {
 	userID := ctx.Keys[keys.UserIDKey].(int)
 	var ErrWithCode errs.ErrorWithCode
-	count, err := h.service.GetUserTracksLikesCount(ctx, userID)
+	songsCount, tracksLikes, tracksListensCount, publicTracks, err := h.service.GetUserTracksGeneralInfo(ctx, userID)
 	if err != nil {
 		if errors.As(err, &ErrWithCode) {
 			errs.ThrowError(ctx, ErrWithCode.Code, ErrWithCode.Message)
@@ -366,6 +366,9 @@ func (h *UserHandlers) UserTracksLikesCount(ctx *gin.Context) {
 		}
 	}
 	ctx.JSON(http.StatusOK, gin.H{
-		"likesCount": count,
+		"songsCount":         songsCount,
+		"tracksLikes":        tracksLikes,
+		"tracksListensCount": tracksListensCount,
+		"publicTracks":       publicTracks,
 	})
 }

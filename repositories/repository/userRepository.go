@@ -377,18 +377,35 @@ limit $3`
 	return list, nil
 }
 
-func (r *UserRepository) GetUserTracksLikesCount(ctx context.Context, userID int) (int, error) {
-	query := `select count(1) from liked_songs ls join songs s on s.id = ls.song_id where s.user_id = $1`
+func (r *UserRepository) GetUserTracksGeneralInfo(ctx context.Context, userID int) (int, int, int, int, error) {
+	query := `
+	SELECT
+    (SELECT COUNT(1) FROM songs s WHERE s.user_id = $1) AS songsCount,
+    (SELECT COUNT(1) 
+     FROM liked_songs ls 
+     JOIN songs s ON s.id = ls.song_id 
+     WHERE s.user_id = $1) AS tracksLikes,
+    (SELECT SUM(sl.listens) 
+     FROM songs_listens sl 
+     JOIN songs s ON s.id = sl.song_id 
+     WHERE s.user_id = $1) AS tracksListensCount,
+    (SELECT COUNT(1) 
+     FROM songs s 
+     WHERE s.user_id = $1 AND s.is_available = true) AS publicTracks;
+	`
 
-	var count int
+	var songsCount int
+	var tracksLikes int
+	var tracksListensCount int
+	var publicTracksCount int
 
-	err := r.db.QueryRow(ctx, query, userID).Scan(&count)
+	err := r.db.QueryRow(ctx, query, userID).Scan(&songsCount, &tracksLikes, &tracksListensCount, &publicTracksCount)
 	if err != nil {
-		log.Println("ERROR GETTING USER TRACKS LIKES COUNT:", err)
-		return 0, errs.ServerError()
+		log.Println("ERROR GETTING USER TRACKS GENERAL INFO:", err)
+		return 0, 0, 0, 0, errs.ServerError()
 	}
 
-	return count, nil
+	return songsCount, tracksLikes, tracksListensCount, publicTracksCount, nil
 }
 
 func (r *UserRepository) GetUserPlaylists(ctx context.Context, userID, targetUserID, start, count int) ([]tdo.UserPlaylist, error) {

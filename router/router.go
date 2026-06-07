@@ -47,7 +47,7 @@ func Init(db *pgxpool.Pool, redis *redis.Client) *gin.Engine {
 		userRoutes.GET("/likes-count", userHandlers.UserLikesCount)
 
 		myTracks.GET("/listen-statistics", userHandlers.UserTracksListenStatistics)
-		myTracks.GET("/likes-count", userHandlers.UserTracksLikesCount)
+		myTracks.GET("/general-info", userHandlers.UserTracksGeneralInfo)
 
 	}
 	songRoutes := r.Group("/songs")
