@@ -29,3 +29,14 @@ type ShortUserInfo struct {
 	Name       string `json:"name" form:"name" validate:""`
 	Photo_file string `json:"photo_file" form:"photo_file" validate:""`
 }
+type UserProfile struct {
+	Id         int    `json:"id" form:"id" validate:""`
+	Name       string `json:"name" form:"name" validate:""`
+	Email      string `json:"email" validate:"email,unique=users_email"`
+	Photo_file string `json:"photo_file" form:"photo_file" validate:""`
+	Is_private bool   `json:"is_private"`
+	Listens    int    `json:"listens"`
+	ListenTime int    `json:"listenTime"`
+	LikesCount int    `json:"likesCount"`
+	SongsCount int    `json:"songsCount"`
+}

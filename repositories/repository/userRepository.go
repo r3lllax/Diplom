@@ -35,17 +35,55 @@ func (r *UserRepository) GetUserByEmail(ctx context.Context, email string) (*mod
 	return &findedUser, nil
 }
 
-func (r *UserRepository) GetUser(ctx context.Context, targetUserID, userID int) (*model.User, error) {
-	var findedUser model.User
-	err := r.db.QueryRow(ctx, "select id,name,photo_file,registrated_at from users where id = $1 and (is_private = false or id = $2)", targetUserID, userID).Scan(&findedUser.Id, &findedUser.Name, &findedUser.Photo_file, &findedUser.Registrated_at)
+func (r *UserRepository) GetUser(ctx context.Context, targetUserID, userID int) (string, error) {
+	var findedUser string
+	var query = `
+	WITH user_data AS (
+    SELECT 
+        u.id,
+        u.name,
+        u.email,
+        u.photo_file,
+        u.registrated_at,
+        u.is_private,
+        (SELECT COALESCE(SUM(sl.listens), 0) FROM songs s LEFT JOIN songs_listens sl ON s.id = sl.song_id WHERE s.user_id = u.id) AS listens,
+        (SELECT COALESCE(SUM(usl.listens * s.duration), 0) FROM user_songs_listens usl JOIN songs s ON usl.song_id = s.id WHERE usl.user_id = u.id) AS listenTime,
+        (SELECT COALESCE(COUNT(*), 0) FROM liked_songs ls JOIN songs s ON ls.song_id = s.id WHERE s.user_id = u.id) AS likesCount,
+        (SELECT COUNT(*) FROM songs WHERE user_id = u.id) AS songsCount
+    FROM users u
+    WHERE u.id = $1
+)
+SELECT jsonb_build_object(
+    'id', id,
+    'name', name,
+    'photo_file', photo_file,
+    'is_private', is_private
+) ||
+CASE
+    WHEN $2 = $1 THEN jsonb_build_object(
+        'email', email,
+        'registrated_at', registrated_at,
+        'listens', listens,
+        'listenTime', listenTime,
+        'likesCount', likesCount,
+        'songsCount', songsCount
+    )
+    WHEN $2 != $1 AND is_private = false THEN jsonb_build_object(
+        'registrated_at', registrated_at
+    )
+    ELSE '{}'::jsonb
+END AS result
+FROM user_data;
+	`
+	err := r.db.QueryRow(ctx, query, targetUserID, userID).Scan(&findedUser)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, errs.New(http.StatusNotFound, "пользователь не найден, или его профиль приватен")
+			return "", errs.New(http.StatusNotFound, "пользователь не найден, или его профиль приватен")
 		}
 		log.Println("GET USER ERROR:", err)
-		return nil, errs.ServerError()
+		return "", errs.ServerError()
 	}
-	return &findedUser, nil
+	return findedUser, nil
 }
 
 func (r *UserRepository) EditUser(ctx context.Context, userID int, name, photo_file, email string, needDeletePhoto bool) (string, error) {

@@ -6,7 +6,6 @@ import (
 	"GIN/keys"
 	service "GIN/service/services"
 	"GIN/tdo/request"
-	"GIN/tdo/response"
 	"errors"
 	"net/http"
 	"strconv"
@@ -39,15 +38,12 @@ func (h *UserHandlers) GetUser(ctx *gin.Context) {
 			return
 		}
 	}
-	if user == nil {
+	if user == "" {
 		errs.ThrowServerError(ctx)
 		return
 	}
-	response := response.GetUser{Id: user.Id, Name: user.Name, Photo_file: user.Photo_file, Registrated_at: user.Registrated_at}
-	ctx.JSON(http.StatusOK, gin.H{
-		"userInfo": response,
-	})
 
+	ctx.Data(http.StatusOK, "application/json", []byte(user))
 }
 func (h *UserHandlers) EditUser(ctx *gin.Context) {
 	var request request.EditUserRequest

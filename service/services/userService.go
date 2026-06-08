@@ -22,10 +22,10 @@ func NewUserService(BService *baseService) *UserService {
 		baseService: *BService,
 	}
 }
-func (s *UserService) GetUser(ctx context.Context, targetUserID, userID int) (*model.User, error) {
+func (s *UserService) GetUser(ctx context.Context, targetUserID, userID int) (string, error) {
 	user, err := s.repositories.UserRepository.GetUser(ctx, targetUserID, userID)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
 	return user, nil
