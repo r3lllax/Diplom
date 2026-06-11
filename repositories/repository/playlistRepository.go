@@ -269,7 +269,11 @@ func (r *PlaylistRepository) GetSongs(ctx context.Context, userID, playlistID, s
 	s.is_available,
 	sl.listens,
 	(select count(1) from liked_songs where id = s.id and s.user_id <> $2) as "likes",
-	EXISTS((select count(1) from liked_songs where id = s.id and s.user_id = $2)) as "is_liked",
+	EXISTS(
+    SELECT 1 
+    FROM liked_songs ls
+    WHERE ls.song_id = s.id AND ls.user_id = $2
+) AS is_liked,
 	ps.added_at
 from playlists_songs ps
 join songs s on s.id = ps.song_id

@@ -6,8 +6,8 @@ create table songs(
     author varchar(255) not null,
     name varchar(255) not null,
     duration int not null,
-    file_path text not null unique,
-    volume_path text not null unique,
+    file_path text not null,
+    volume_path text not null,
     uploaded_at timestamp,
     is_available boolean default true,
     /*TODO: is_private boolean default false, */
