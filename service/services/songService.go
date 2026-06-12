@@ -162,22 +162,17 @@ func (s *SongService) UserPlaylistsWithSongContext(ctx context.Context, userID, 
 	return playlists, nil
 }
 
-func (s *SongService) GetSongs(ctx context.Context, userID, start, count int, sorted bool) (*response.GetSongsResponse, error) {
-	songs, err := s.repositories.SongRepository.GetSongs(ctx, userID, start, count, sorted)
+func (s *SongService) GetSongs(ctx context.Context, userID int, search string, start, count int, sorted bool) (*response.GetSongsResponse, error) {
+	songs, err := s.repositories.SongRepository.GetSongs(ctx, userID, search, start, count, sorted)
 	if err != nil {
 		return nil, err
 	}
-	totalRows, err := s.repositories.SongRepository.GetSongsCount(ctx, userID)
+	totalRows, err := s.repositories.SongRepository.GetSongsCountWithSearch(ctx, userID, search)
 	if err != nil {
 		return nil, err
 	}
-	findedSongs := response.GetSongsResponse{}
-	findedSongs.TotalRows = totalRows
-	findedSongs.Data = songs
-
-	return &findedSongs, nil
+	return &response.GetSongsResponse{TotalRows: totalRows, Data: songs}, nil
 }
-
 func (s *SongService) ChangeStatus(ctx context.Context, userID, songID int, status bool) error {
 	isAuthor, err := s.repositories.SongRepository.UserOwnSong(ctx, userID, songID)
 	if err != nil {

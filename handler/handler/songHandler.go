@@ -129,16 +129,18 @@ func (h *SongHandlers) GetSong(ctx *gin.Context) {
 func (h *SongHandlers) GetSongs(ctx *gin.Context) {
 	start, count := handlerHelpers.GetPaginationFromRequest(ctx)
 	userID := ctx.Keys[keys.UserIDKey].(int)
-
 	sorted := ctx.Query("sorted") == "true"
+	search := ctx.Query("search")
 
-	var ErrWithCode errs.ErrorWithCode
-	songs, err := h.service.GetSongs(ctx.Request.Context(), userID, start, count, sorted)
+	songs, err := h.service.GetSongs(ctx.Request.Context(), userID, search, start, count, sorted)
 	if err != nil {
+		var ErrWithCode errs.ErrorWithCode
 		if errors.As(err, &ErrWithCode) {
 			errs.ThrowError(ctx, ErrWithCode.Code, ErrWithCode.Message)
 			return
 		}
+		errs.ThrowError(ctx, http.StatusInternalServerError, "internal error")
+		return
 	}
 
 	ctx.JSON(http.StatusOK, gin.H{

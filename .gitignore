@@ -1,3 +1,7 @@
 photos/*
+!photos/.gitkeep
 audios/*
+!audios/.gitkeep
 files/*
+!files/.gitkeep
+

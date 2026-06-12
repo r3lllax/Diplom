@@ -339,34 +339,35 @@ where ul.user_id = $1
 }
 
 func (r *UserRepository) GetUserGeneralListenStats(ctx context.Context, userID int) (int, int, int, int, error) {
-	query := `select 
-	sum(ul.listens) as "listenSongsCount",
-	coalesce(sum(s.duration * ul.listens ),0) as "listen_time",
-	(select count(1) 
-from liked_songs ul
-join songs s on s.id=ul.song_id
-where ul.user_id = $1) as "likesCount",
-	(select sum(1)
-	from liked_songs ls
-	join songs s on ls.song_id = s.id
-	where s.user_id = $1 and ls.user_id <> $1) as "userSongsLikes"
-from user_songs_listens ul
-join songs s on s.id=ul.song_id
-where ul.user_id = $1
-`
+	query := `
+        SELECT 
+            COALESCE(SUM(ul.listens), 0) AS listenSongsCount,
+            COALESCE(SUM(s.duration * ul.listens), 0) AS listen_time,
+            COALESCE((
+                SELECT COUNT(1)
+                FROM liked_songs ls
+                WHERE ls.user_id = $1
+            ), 0) AS likesCount,
+            COALESCE((
+                SELECT COUNT(1)
+                FROM liked_songs ls
+                JOIN songs s ON s.id = ls.song_id
+                WHERE s.user_id = $1 AND ls.user_id <> $1
+            ), 0) AS userSongsLikes
+        FROM user_songs_listens ul
+        JOIN songs s ON s.id = ul.song_id
+        WHERE ul.user_id = $1
+    `
 
-	var listenSongsCount int
-	var listen_time int
-	var likesCount int
-	var userSongsLikes int
+	var listenSongsCount, listenTime, likesCount, userSongsLikes int
 
-	err := r.db.QueryRow(ctx, query, userID).Scan(&listenSongsCount, &listen_time, &likesCount, &userSongsLikes)
+	err := r.db.QueryRow(ctx, query, userID).Scan(&listenSongsCount, &listenTime, &likesCount, &userSongsLikes)
 	if err != nil {
 		log.Println("ERROR GETTING USER GENERAL STATISTICS:", err)
 		return 0, 0, 0, 0, errs.ServerError()
 	}
 
-	return listenSongsCount, listen_time, likesCount, userSongsLikes, nil
+	return listenSongsCount, listenTime, likesCount, userSongsLikes, nil
 }
 
 func (r *UserRepository) GetUserLikesCount(ctx context.Context, userID int) (int, error) {

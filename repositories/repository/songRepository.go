@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -176,43 +177,59 @@ where s.id = $1 and (s.is_available = true or s.user_id = $2)`
 	return &findedSong, nil
 }
 
-func (r *SongRepository) GetSongs(ctx context.Context, userID, start, count int, sorted bool) ([]model.SongInGlobalSearch, error) {
-	query := `
-	SELECT 
-		s.id, 
-		u.id AS user_id,
-		u.name as "username",
-		u.photo_file as "photo_file",
-		s.name, 
-		s.duration, 
-		s.author, 
-		s.file_path, 
-		s.volume_path, 
-		sl.listens,
-		COUNT(ls.song_id) AS likes,
-		EXISTS((select 1 from liked_songs ls where song_id = s.id and ls.user_id = $1)) as "is_liked"
-	FROM songs s
-	INNER JOIN users u ON u.id = s.user_id
-	INNER JOIN songs_listens sl ON sl.song_id = s.id
-	LEFT JOIN liked_songs ls ON ls.song_id = s.id
-	WHERE s.is_available = TRUE OR s.user_id = $1
-	GROUP BY s.id, u.id, sl.listens
-	`
-	if sorted {
-		query += "\n\torder by sl.listens desc"
+func (r *SongRepository) GetSongs(ctx context.Context, userID int, search string, start, count int, sorted bool) ([]model.SongInGlobalSearch, error) {
+	baseQuery := `
+        SELECT 
+            s.id, 
+            u.id AS user_id,
+            u.name as "username",
+            u.photo_file as "photo_file",
+            s.name, 
+            s.duration, 
+            s.author, 
+            s.file_path, 
+            s.volume_path, 
+            sl.listens,
+            COUNT(ls.song_id) AS likes,
+            EXISTS(SELECT 1 FROM liked_songs ls2 WHERE ls2.song_id = s.id AND ls2.user_id = $1) as "is_liked"
+        FROM songs s
+        INNER JOIN users u ON u.id = s.user_id
+        INNER JOIN songs_listens sl ON sl.song_id = s.id
+        LEFT JOIN liked_songs ls ON ls.song_id = s.id
+        WHERE (s.is_available = TRUE OR s.user_id = $1)
+    `
+
+	args := []interface{}{userID}
+	argCounter := 2
+
+	if search != "" {
+		searchPattern := "%" + search + "%"
+		baseQuery += ` AND (s.name ILIKE $` + strconv.Itoa(argCounter) + ` OR s.author ILIKE $` + strconv.Itoa(argCounter) + `)`
+		args = append(args, searchPattern)
+		argCounter++
 	}
-	query += `
-	OFFSET $2
-	LIMIT $3
-	`
-	var songs []model.SongInGlobalSearch
-	rows, err := r.db.Query(ctx, query, userID, start, count)
+
+	baseQuery += `
+        GROUP BY s.id, u.id, u.name, u.photo_file, s.name, s.duration, s.author, s.file_path, s.volume_path, sl.listens
+    `
+
+	if sorted {
+		baseQuery += "\n ORDER BY sl.listens DESC"
+	} else {
+		baseQuery += "\n ORDER BY s.id"
+	}
+
+	baseQuery += fmt.Sprintf("\n OFFSET $%d LIMIT $%d", argCounter, argCounter+1)
+	args = append(args, start, count)
+
+	rows, err := r.db.Query(ctx, baseQuery, args...)
 	if err != nil {
 		log.Println("ERROR WHILE GET SONGS:", err)
-		return []model.SongInGlobalSearch{}, errs.ServerError()
+		return nil, errs.ServerError()
 	}
 	defer rows.Close()
 
+	var songs []model.SongInGlobalSearch
 	for rows.Next() {
 		var song model.SongInGlobalSearch
 		err := rows.Scan(&song.Id, &song.UserInfo.Id, &song.UserInfo.Name, &song.UserInfo.Photo_file, &song.Name, &song.Duration, &song.Author, &song.FilePath, &song.VolumePath, &song.Listens, &song.Likes, &song.IsLiked)
@@ -223,9 +240,7 @@ func (r *SongRepository) GetSongs(ctx context.Context, userID, start, count int,
 		songs = append(songs, song)
 	}
 	return songs, nil
-
 }
-
 func (r *SongRepository) GetSongsCount(ctx context.Context, userID int) (int, error) {
 	query := `SELECT count (1)
 		FROM songs s
@@ -241,6 +256,21 @@ func (r *SongRepository) GetSongsCount(ctx context.Context, userID int) (int, er
 
 	return songsCount, nil
 
+}
+func (r *SongRepository) GetSongsCountWithSearch(ctx context.Context, userID int, search string) (int, error) {
+	query := `
+        SELECT COUNT(*)
+        FROM songs s
+        WHERE (s.is_available = TRUE OR s.user_id = $1)
+    `
+	args := []interface{}{userID}
+	if search != "" {
+		query += ` AND (s.name ILIKE $2 OR s.author ILIKE $2)`
+		args = append(args, "%"+search+"%")
+	}
+	var count int
+	err := r.db.QueryRow(ctx, query, args...).Scan(&count)
+	return count, err
 }
 
 func (r *SongRepository) ChangeStatus(ctx context.Context, songID int, status string) error {

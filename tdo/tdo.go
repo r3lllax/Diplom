@@ -35,7 +35,7 @@ type UserSongListenStatistic struct {
 	Name           string    `json:"name"`
 	VolumePath     string    `json:"volume_path"`
 	LastListenTime time.Time `json:"last_listen_time"`
-	IsAvailable    bool      `json:"is_available"`
+	IsAvailable    bool      `json:"isAvailable"`
 	Listens        int       `json:"listens"`
 	ListenTime     int       `json:"listen_time"`
 }
@@ -45,7 +45,7 @@ type UserTrackListenStatistic struct {
 	Author      string `json:"author"`
 	Name        string `json:"name"`
 	VolumePath  string `json:"volume_path"`
-	IsAvailable bool   `json:"is_available"`
+	IsAvailable bool   `json:"isAvailable"`
 	Listens     int    `json:"listens"`
 }
 
