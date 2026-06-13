@@ -128,18 +128,17 @@ func (r *PlaylistRepository) GetInfo(ctx context.Context, userID, playlistID int
   p.volume_path,
   p.is_private,
   p.is_available,
-  count(ps.id) as "songs_count",
-  coalesce(sum(s.duration),0) as "playlist_duration",
+  count(CASE WHEN s.is_available = true OR s.user_id = $2 THEN ps.id END) as "songs_count",
+  coalesce(sum(CASE WHEN s.is_available = true OR s.user_id = $2 THEN s.duration ELSE 0 END), 0) as "playlist_duration",
   (select count(1) from liked_playlists lp where lp.playlist_id = p.id and lp.user_id <> p.user_id) as "likes_count",
-    (exists(select 1 from liked_playlists lp where lp.playlist_id = p.id and lp.user_id = $2)) as "is_liked"
+  (exists(select 1 from liked_playlists lp where lp.playlist_id = p.id and lp.user_id = $2)) as "is_liked"
 from playlists p
 join users a on p.user_id = a.id
 left join playlists_songs ps on ps.playlist_id = p.id
 left join songs s on s.id = ps.song_id
 where p.id = $1
   and ((p.is_private = false and p.is_available = true ) or p.user_id = $2)
-group by p.id,p.user_id,a.name,a.photo_file,p.title,p.description,p.volume_path,p.is_private,p.is_available
-`
+group by p.id, p.user_id, a.name, a.photo_file, p.title, p.description, p.volume_path, p.is_private, p.is_available`
 	var playlist tdo.PlaylistInfo
 	err := r.db.QueryRow(ctx, query, playlistID, userID).Scan(
 		&playlist.Id,
