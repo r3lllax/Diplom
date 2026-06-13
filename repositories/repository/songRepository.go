@@ -69,6 +69,13 @@ func (r *SongRepository) DeleteSong(ctx context.Context, songID int) (string, st
 }
 
 func (r *SongRepository) EditSong(ctx context.Context, author, name, newVolume, newFile string, songID, duration int) (string, string, error) {
+	var oldFilePath, oldVolumePath string
+	err := r.db.QueryRow(ctx, "SELECT file_path, volume_path FROM songs WHERE id=$1", songID).Scan(&oldFilePath, &oldVolumePath)
+	if err != nil {
+		log.Println("GETTING OLD SONG PATHS ERROR:", err)
+		return "", "", errs.ServerError()
+	}
+
 	setClauses := []string{}
 	args := []interface{}{}
 	argPos := 1
@@ -78,19 +85,16 @@ func (r *SongRepository) EditSong(ctx context.Context, author, name, newVolume, 
 		args = append(args, author)
 		argPos++
 	}
-
 	if name != "" {
 		setClauses = append(setClauses, fmt.Sprintf("name = $%d", argPos))
 		args = append(args, name)
 		argPos++
 	}
-
 	if newVolume != "" {
 		setClauses = append(setClauses, fmt.Sprintf("volume_path = $%d", argPos))
 		args = append(args, newVolume)
 		argPos++
 	}
-
 	if newFile != "" {
 		setClauses = append(setClauses, fmt.Sprintf("file_path = $%d", argPos))
 		args = append(args, newFile)
@@ -101,21 +105,20 @@ func (r *SongRepository) EditSong(ctx context.Context, author, name, newVolume, 
 		args = append(args, duration)
 		argPos++
 	}
-	args = append(args, songID)
 	if len(setClauses) == 0 {
 		return "", "", errs.New(http.StatusOK, "Нечего обновлять")
 	}
 
-	query := fmt.Sprintf("update songs set %s where id=$%v returning OLD.file_path,OLD.volume_path", strings.Join(setClauses, ", "), len(args))
+	args = append(args, songID)
+	query := fmt.Sprintf("UPDATE songs SET %s WHERE id=$%d", strings.Join(setClauses, ", "), argPos)
 
-	var oldFilePath string
-	var oldVolumePath string
-
-	err := r.db.QueryRow(ctx, query, args...).Scan(&oldFilePath, &oldVolumePath)
+	_, err = r.db.Exec(ctx, query, args...)
 	if err != nil {
 		log.Println("UPDATING SONG ERROR:", err)
 		return "", "", errs.ServerError()
 	}
+
+	// 3. Возвращаем старые пути для удаления файлов
 	return oldFilePath, oldVolumePath, nil
 }
 

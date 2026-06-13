@@ -87,6 +87,13 @@ FROM user_data;
 }
 
 func (r *UserRepository) EditUser(ctx context.Context, userID int, name, photo_file, email string, needDeletePhoto bool) (string, error) {
+	var oldPhotoFile string
+	err := r.db.QueryRow(ctx, "SELECT photo_file FROM users WHERE id=$1", userID).Scan(&oldPhotoFile)
+	if err != nil {
+		log.Println("GETTING OLD PHOTO FILE ERROR:", err)
+		return "", errs.ServerError()
+	}
+
 	setClauses := []string{}
 	args := []interface{}{}
 	argPos := 1
@@ -97,9 +104,14 @@ func (r *UserRepository) EditUser(ctx context.Context, userID int, name, photo_f
 		argPos++
 	}
 
-	if photo_file != "" || needDeletePhoto {
+	newPhotoFile := photo_file
+	if needDeletePhoto {
+		newPhotoFile = ""
+	}
+
+	if newPhotoFile != "" || needDeletePhoto {
 		setClauses = append(setClauses, fmt.Sprintf("photo_file = $%d", argPos))
-		args = append(args, photo_file)
+		args = append(args, newPhotoFile)
 		argPos++
 	}
 
@@ -109,24 +121,18 @@ func (r *UserRepository) EditUser(ctx context.Context, userID int, name, photo_f
 		argPos++
 	}
 
-	args = append(args, userID)
-	if len(setClauses) == 0 && !needDeletePhoto {
+	if len(setClauses) == 0 {
 		return "", errs.New(http.StatusOK, "Нечего обновлять")
 	}
 
-	if needDeletePhoto && photo_file == "" {
-		photo_file = ""
-	}
-
-	query := fmt.Sprintf("update users set %s where id=$%v returning OLD.photo_file", strings.Join(setClauses, ", "), len(args))
-
-	var oldPhotoFile string
-
-	err := r.db.QueryRow(ctx, query, args...).Scan(&oldPhotoFile)
+	args = append(args, userID)
+	query := fmt.Sprintf("UPDATE users SET %s WHERE id=$%d", strings.Join(setClauses, ", "), argPos)
+	_, err = r.db.Exec(ctx, query, args...)
 	if err != nil {
-		log.Println("UPDATING SONG ERROR:", err)
+		log.Println("UPDATING USER ERROR:", err)
 		return "", errs.ServerError()
 	}
+
 	return oldPhotoFile, nil
 }
 
