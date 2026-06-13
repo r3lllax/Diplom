@@ -11,6 +11,7 @@ RUN apk add --no-cache ffmpeg ca-certificates
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup -u 1000
 WORKDIR /app
 COPY --from=builder /app/server .
+COPY --from=builder /app/migrations ./migrations
 COPY no_pfp.jpg /defaults/no_pfp.jpg
 
 RUN mkdir -p /app/uploads/photos /app/uploads/audios /app/uploads/files \
