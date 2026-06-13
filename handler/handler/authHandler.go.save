@@ -1,14 +1,7 @@
 package handler
 
-import (
-	"GIN/JWT"
-	errs "GIN/errors"
-	"GIN/internal/env"
-	"GIN/keys"
-	"GIN/tdo/request"
-	"net/http"
-	"strings"
-
+import ( "GIN/JWT" errs "GIN/errors" "GIN/internal/env" "GIN/keys" 
+	"GIN/tdo/request" "net/http" "strings" "log"
 
 	service "GIN/service/services"
 	"errors"
@@ -79,7 +72,7 @@ func (h *AuthHandlers) Login(ctx *gin.Context) {
 		refresh,
 		int(time.Duration(refreshLifeTimeHours)*time.Hour),
 		"/",
-		"",
+		"localhost",
 		false,
 		true,
 	)
@@ -103,7 +96,7 @@ func (h *AuthHandlers) Logout(ctx *gin.Context) {
 		"",
 		-1,
 		"/",
-		"",
+		"localhost",
 		false,
 		true,
 	)
@@ -127,7 +120,7 @@ func (h *AuthHandlers) LogoutAll(ctx *gin.Context) {
 		"",
 		-1,
 		"/",
-		"",
+		"localhost",
 		false,
 		true,
 	)
@@ -141,16 +134,19 @@ func (h *AuthHandlers) Refresh(ctx *gin.Context) {
 		errs.ThrowUnauthorizedError(ctx)
 		return
 	}
+	log.Println("DEBUG: Got refresh_token:", refreshCookie.Value[:10], "...")
 	refreshToken, err := JWT.ParseToken(refreshCookie.Value)
 	if err != nil {
 		errs.ThrowUnauthorizedError(ctx)
 		return
 	}
+	log.Println("DEBUG: Token successfully parsed")
 	info, err := JWT.ConvertToken(refreshToken)
 	if err != nil {
 		errs.ThrowUnauthorizedError(ctx)
 		return
 	}
+	log.Println("DEBUG: Token successfuly converted")
 
 	userID := int(info[string(keys.UserIDKey)].(float64))
 
@@ -169,7 +165,7 @@ func (h *AuthHandlers) Refresh(ctx *gin.Context) {
 		newRefreshToken,
 		int(time.Duration(refreshLifeTimeHours)*time.Hour),
 		"/",
-		"",
+		"localhost",
 		false,
 		true,
 	)
