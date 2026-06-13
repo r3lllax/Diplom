@@ -5,6 +5,7 @@ import (
 	"log"
 	"mime/multipart"
 	"os"
+	"path/filepath"
 	"sync"
 
 	"github.com/gin-gonic/gin"
@@ -21,6 +22,11 @@ func NewStorageRepository() *StorageRepository {
 }
 
 func (r *StorageRepository) UploadFile(file *multipart.FileHeader, dst string, c *gin.Context) error {
+	dstF := filepath.Join(os.Getenv("UPLOAD_BASE_DIR"), dst)
+
+	if err := os.MkdirAll(filepath.Dir(dstF), 0755); err != nil {
+		return err
+	}
 	err := c.SaveUploadedFile(file, dst)
 	if err != nil {
 		log.Println("SaveUploadedFile error:", err)

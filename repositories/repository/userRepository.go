@@ -151,20 +151,20 @@ func (r *UserRepository) DeleteUser(ctx context.Context, userID int) error {
 
 func (r *UserRepository) GetLikedSongs(ctx context.Context, targetUserID, userID, start, count int) ([]model.SongInLikes, error) {
 
-	query := `select song_id as "song_id",user_id,username,user_pfp,author,song_name,file_path,volume_path,liked_at,
-	EXISTS((select 1 from liked_songs ls where ls.song_id = song_id and ls.user_id = $2)) as "is_liked"
-from (
-	select ls.song_id,ls.user_id,u.name as "username",u.photo_file as "user_pfp",s.author,s.name as "song_name",s.file_path,s.volume_path,s.duration,s.is_available,ls.liked_at
-	from liked_songs ls
-	join songs s on s.id = ls.song_id
-	join users u on u.id = ls.user_id
-	where ls.user_id = $1 and (u.is_private = false or u.id = $2)
-)
-where is_available = true or user_id = $2
-order by liked_at desc
-offset $3
-limit $4
-`
+	query := `SELECT song_id AS "song_id", user_id, username, user_pfp, author, song_name, file_path, volume_path, liked_at,
+    EXISTS(SELECT 1 FROM liked_songs ls WHERE ls.song_id = sub.song_id AND ls.user_id = $2) AS "is_liked"
+FROM (
+    SELECT ls.song_id, ls.user_id, u.name AS "username", u.photo_file AS "user_pfp",
+           s.author, s.name AS "song_name", s.file_path, s.volume_path, s.duration, s.is_available, ls.liked_at
+    FROM liked_songs ls
+    JOIN songs s ON s.id = ls.song_id
+    JOIN users u ON u.id = ls.user_id
+    WHERE ls.user_id = $1 AND (u.is_private = false OR u.id = $2)
+) AS sub
+WHERE is_available = true OR user_id = $2
+ORDER BY liked_at DESC
+OFFSET $3
+LIMIT $4`
 
 	rows, err := r.db.Query(ctx, query, targetUserID, userID, start, count)
 	if err != nil {

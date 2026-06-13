@@ -7,6 +7,7 @@ import (
 	"GIN/router"
 	"fmt"
 	"log"
+	"os"
 
 	"github.com/joho/godotenv"
 )
@@ -23,7 +24,13 @@ func main() {
 
 	r := router.Init(pool, redis)
 
-	r.Run(fmt.Sprintf(":%d", 1337))
+	// Определяем порт
+	port := os.Getenv("SERVER_PORT")
+	if port == "" {
+		port = "1337"
+	}
+
+	r.Run(fmt.Sprintf(":%s", port))
 
 }
 
