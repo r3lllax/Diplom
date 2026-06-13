@@ -61,6 +61,13 @@ func (r *PlaylistRepository) UserOwnPlaylist(ctx context.Context, userID, playli
 }
 
 func (r *PlaylistRepository) EditPlaylist(ctx context.Context, title, newVolume string, description *string, playlistID int) (string, error) {
+	var oldVolumePath string
+	err := r.db.QueryRow(ctx, "SELECT volume_path FROM playlists WHERE id=$1", playlistID).Scan(&oldVolumePath)
+	if err != nil {
+		log.Println("GETTING OLD VOLUME PATH ERROR:", err)
+		return "", errs.ServerError()
+	}
+
 	setClauses := []string{}
 	args := []interface{}{}
 	argPos := 1
@@ -83,20 +90,19 @@ func (r *PlaylistRepository) EditPlaylist(ctx context.Context, title, newVolume 
 		argPos++
 	}
 
-	args = append(args, playlistID)
 	if len(setClauses) == 0 {
 		return "", errs.New(http.StatusOK, "Нечего обновлять")
 	}
 
-	query := fmt.Sprintf("update playlists set %s where id=$%v returning OLD.volume_path", strings.Join(setClauses, ", "), len(args))
+	args = append(args, playlistID)
+	query := fmt.Sprintf("UPDATE playlists SET %s WHERE id=$%d", strings.Join(setClauses, ", "), argPos)
 
-	var oldVolumePath string
-
-	err := r.db.QueryRow(ctx, query, args...).Scan(&oldVolumePath)
+	_, err = r.db.Exec(ctx, query, args...)
 	if err != nil {
 		log.Println("UPDATING PLAYLIST ERROR:", err)
 		return "", errs.ServerError()
 	}
+
 	return oldVolumePath, nil
 }
 
